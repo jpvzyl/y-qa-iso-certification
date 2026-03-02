@@ -10,8 +10,12 @@ import {
   Settings,
   Menu,
   X,
+  LogOut,
+  User,
 } from 'lucide-react'
 import { useState } from 'react'
+import { useAuth } from '../lib/auth'
+import ProjectSelector from './ProjectSelector'
 
 const NAV = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
@@ -26,18 +30,40 @@ const NAV = [
 ]
 
 function SidebarContent({ onClose }) {
+  const { user, logout } = useAuth()
+
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center justify-between border-b border-gray-800 px-5 py-5">
-        <div>
-          <h1 className="text-lg font-bold text-white tracking-tight">Y-QA ISO Certification</h1>
-          <p className="text-[11px] text-gray-500 tracking-wide uppercase">ISO 27001:2022</p>
+      <div className="border-b border-gray-800 px-5 py-5">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-lg font-bold text-white tracking-tight">Y-QA ISO Certification</h1>
+            <p className="text-[11px] text-gray-500 tracking-wide uppercase">ISO 27001:2022</p>
+          </div>
+          {onClose && (
+            <button onClick={onClose} className="text-gray-400 hover:text-white lg:hidden">
+              <X size={20} />
+            </button>
+          )}
         </div>
-        {onClose && (
-          <button onClick={onClose} className="text-gray-400 hover:text-white lg:hidden">
-            <X size={20} />
-          </button>
+
+        {user && (
+          <div className="mt-4 flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500/10 border border-emerald-500/20">
+              <User size={14} className="text-emerald-400" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium text-gray-200">
+                {user.first_name} {user.last_name}
+              </p>
+              <p className="truncate text-xs text-gray-500">{user.email}</p>
+            </div>
+          </div>
         )}
+
+        <div className="mt-3">
+          <ProjectSelector />
+        </div>
       </div>
 
       <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 py-4">
@@ -61,8 +87,17 @@ function SidebarContent({ onClose }) {
         ))}
       </nav>
 
-      <div className="border-t border-gray-800 px-5 py-4">
-        <p className="text-[11px] text-gray-600 text-center">Powered by <span className="text-emerald-500 font-semibold">Y-QA</span></p>
+      <div className="border-t border-gray-800 px-3 py-3">
+        <button
+          onClick={logout}
+          className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-400 hover:bg-gray-800 hover:text-red-400 transition-colors"
+        >
+          <LogOut size={18} />
+          Sign Out
+        </button>
+        <p className="mt-2 text-[11px] text-gray-600 text-center">
+          Powered by <span className="text-emerald-500 font-semibold">Y-QA</span>
+        </p>
       </div>
     </div>
   )
@@ -73,12 +108,10 @@ export default function Layout() {
 
   return (
     <div className="flex h-screen bg-gray-950 text-gray-100">
-      {/* Mobile overlay */}
       {sidebarOpen && (
         <div className="fixed inset-0 z-40 bg-black/60 lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
-      {/* Sidebar - mobile */}
       <aside
         className={`fixed inset-y-0 left-0 z-50 w-64 bg-gray-950 border-r border-gray-800 transition-transform lg:hidden ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
@@ -87,12 +120,10 @@ export default function Layout() {
         <SidebarContent onClose={() => setSidebarOpen(false)} />
       </aside>
 
-      {/* Sidebar - desktop */}
       <aside className="hidden lg:flex lg:w-64 lg:flex-col lg:border-r lg:border-gray-800 bg-gray-950">
         <SidebarContent />
       </aside>
 
-      {/* Main content */}
       <div className="flex flex-1 flex-col overflow-hidden">
         <header className="flex h-14 items-center gap-4 border-b border-gray-800 bg-gray-950 px-4 lg:hidden">
           <button onClick={() => setSidebarOpen(true)} className="text-gray-400 hover:text-white">

@@ -1,29 +1,18 @@
 import { useState, useEffect } from 'react'
-import { Settings as SettingsIcon, CheckCircle2, XCircle, Loader2, Save } from 'lucide-react'
-import { testConnection, getFrameworks } from '../lib/api'
+import { Settings as SettingsIcon, CheckCircle2, XCircle, Loader2, User, FolderOpen } from 'lucide-react'
+import { testConnection } from '../lib/api'
+import { useAuth } from '../lib/auth'
 
 export default function Settings() {
-  const [projectId, setProjectId] = useState('')
-  const [apiKey, setApiKey] = useState('')
+  const { user, selectedProject } = useAuth()
   const [framework, setFramework] = useState('')
   const [frameworks, setFrameworks] = useState([])
   const [testing, setTesting] = useState(false)
   const [testResult, setTestResult] = useState(null)
-  const [saved, setSaved] = useState(false)
 
   useEffect(() => {
-    setProjectId(localStorage.getItem('yqa_project_id') || '')
-    setApiKey(localStorage.getItem('yqa_api_key') || '')
     setFramework(localStorage.getItem('yqa_framework_id') || '')
   }, [])
-
-  const handleSave = () => {
-    localStorage.setItem('yqa_project_id', projectId)
-    localStorage.setItem('yqa_api_key', apiKey)
-    if (framework) localStorage.setItem('yqa_framework_id', framework)
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
-  }
 
   const handleTest = async () => {
     setTesting(true)
@@ -43,66 +32,85 @@ export default function Settings() {
     }
   }
 
+  const handleFrameworkChange = (e) => {
+    const val = e.target.value
+    setFramework(val)
+    if (val) localStorage.setItem('yqa_framework_id', val)
+  }
+
   return (
     <div className="space-y-6 max-w-2xl">
       <div>
         <h1 className="text-2xl font-bold text-white">Settings</h1>
-        <p className="text-sm text-gray-500">Configure your Y-QA ISO Certification connection</p>
+        <p className="text-sm text-gray-500">Account and connection details</p>
       </div>
 
-      <div className="rounded-xl bg-gray-900 border border-gray-800 p-6 space-y-5">
-        <h3 className="text-sm font-medium text-gray-300">API Configuration</h3>
-
-        <div className="space-y-4">
-          <div>
-            <label className="block text-xs text-gray-500 mb-1.5">Project ID</label>
-            <input
-              type="text"
-              value={projectId}
-              onChange={(e) => setProjectId(e.target.value)}
-              placeholder="Enter your Y-QA project ID"
-              className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm text-gray-200 placeholder-gray-600 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500/50"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs text-gray-500 mb-1.5">API Key</label>
-            <input
-              type="password"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              placeholder="Enter your Y-QA API key"
-              className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm text-gray-200 placeholder-gray-600 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500/50"
-            />
-          </div>
-
-          {frameworks.length > 0 && (
-            <div>
-              <label className="block text-xs text-gray-500 mb-1.5">Framework</label>
-              <select
-                value={framework}
-                onChange={(e) => setFramework(e.target.value)}
-                className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm text-gray-200 focus:border-emerald-500 focus:outline-none"
-              >
-                <option value="">Select a framework...</option>
-                {frameworks.map((f) => (
-                  <option key={f.id} value={f.id}>
-                    {f.name || f.title} {f.version ? `(${f.version})` : ''}
-                  </option>
-                ))}
-              </select>
+      <div className="rounded-xl bg-gray-900 border border-gray-800 p-6 space-y-4">
+        <h3 className="text-sm font-medium text-gray-300">Account</h3>
+        {user && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500/10 border border-emerald-500/20">
+                <User size={18} className="text-emerald-400" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-200">
+                  {user.first_name} {user.last_name}
+                </p>
+                <p className="text-xs text-gray-500">{user.email}</p>
+              </div>
             </div>
-          )}
-        </div>
+            {user.role && (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-500">Role:</span>
+                <span className="rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 text-xs font-medium text-emerald-400 capitalize">
+                  {user.role}
+                </span>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
-        <div className="flex items-center gap-3 pt-2">
-          <button
-            onClick={handleSave}
-            className="flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
-          >
-            <Save size={14} />
-            {saved ? 'Saved!' : 'Save Configuration'}
-          </button>
+      {selectedProject && (
+        <div className="rounded-xl bg-gray-900 border border-gray-800 p-6 space-y-3">
+          <h3 className="text-sm font-medium text-gray-300">Current Project</h3>
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500/10 border border-emerald-500/20">
+              <FolderOpen size={18} className="text-emerald-400" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-200">{selectedProject.name}</p>
+              {selectedProject.description && (
+                <p className="text-xs text-gray-500">{selectedProject.description}</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="rounded-xl bg-gray-900 border border-gray-800 p-6 space-y-5">
+        <h3 className="text-sm font-medium text-gray-300">Framework &amp; Connection</h3>
+
+        {frameworks.length > 0 && (
+          <div>
+            <label className="block text-xs text-gray-500 mb-1.5">Framework</label>
+            <select
+              value={framework}
+              onChange={handleFrameworkChange}
+              className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm text-gray-200 focus:border-emerald-500 focus:outline-none"
+            >
+              <option value="">Select a framework...</option>
+              {frameworks.map((f) => (
+                <option key={f.id} value={f.id}>
+                  {f.name || f.title} {f.version ? `(${f.version})` : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        <div className="flex items-center gap-3">
           <button
             onClick={handleTest}
             disabled={testing}
@@ -114,11 +122,13 @@ export default function Settings() {
         </div>
 
         {testResult && (
-          <div className={`flex items-center gap-3 rounded-lg p-4 ${
-            testResult.success
-              ? 'bg-emerald-500/10 border border-emerald-500/20'
-              : 'bg-red-500/10 border border-red-500/20'
-          }`}>
+          <div
+            className={`flex items-center gap-3 rounded-lg p-4 ${
+              testResult.success
+                ? 'bg-emerald-500/10 border border-emerald-500/20'
+                : 'bg-red-500/10 border border-red-500/20'
+            }`}
+          >
             {testResult.success ? (
               <CheckCircle2 size={18} className="text-emerald-400 shrink-0" />
             ) : (
