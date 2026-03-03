@@ -1,14 +1,19 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { ArrowLeft, Shield, FileSearch, AlertTriangle, CheckCircle2 } from 'lucide-react'
+import { ArrowLeft, Shield, FileSearch, AlertTriangle, Sparkles, Loader2 } from 'lucide-react'
 import ComplianceBadge from '../components/ComplianceBadge'
 import StatusBadge from '../components/StatusBadge'
-import { getControl } from '../lib/api'
+import GlassCard from '../components/GlassCard'
+import LoadingScreen from '../components/LoadingScreen'
+import AiBadge from '../components/AiBadge'
+import { getControl, aiControlSuggestions } from '../lib/api'
 
 export default function ControlDetail() {
   const { id } = useParams()
   const [control, setControl] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [aiSuggestions, setAiSuggestions] = useState(null)
+  const [loadingAi, setLoadingAi] = useState(false)
 
   useEffect(() => {
     getControl(id)
@@ -17,19 +22,24 @@ export default function ControlDetail() {
       .finally(() => setLoading(false))
   }, [id])
 
-  if (loading) {
-    return (
-      <div className="flex h-full items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent" />
-      </div>
-    )
+  const handleAiSuggestions = async () => {
+    setLoadingAi(true)
+    try {
+      const res = await aiControlSuggestions(id)
+      setAiSuggestions(res.data)
+    } catch { /* graceful fallback */ }
+    finally { setLoadingAi(false) }
   }
+
+  if (loading) return <LoadingScreen message="Loading control details..." />
 
   if (!control) {
     return (
-      <div className="flex flex-col items-center justify-center py-12 text-gray-500">
-        <Shield size={40} className="mb-3" />
-        <p>Control not found.</p>
+      <div className="flex flex-col items-center justify-center py-12 text-gray-500 animate-fade-in">
+        <div className="rounded-2xl bg-gray-800/50 p-4 mb-3">
+          <Shield size={40} className="text-gray-600" />
+        </div>
+        <p className="text-lg font-medium">Control not found</p>
         <Link to="/controls" className="mt-2 text-sm text-emerald-400 hover:underline">Back to controls</Link>
       </div>
     )
@@ -39,56 +49,78 @@ export default function ControlDetail() {
   const findings = control.findings || control.compliance_findings || []
   const applicability = control.applicability || control.control_applicability || {}
   const riskTreatments = control.risk_treatments || []
-
   const implementationPct = control.implementation_percentage ?? control.implementation_progress ?? 0
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       <div className="flex items-center gap-3">
-        <Link to="/controls" className="rounded-lg bg-gray-900 border border-gray-800 p-2 hover:bg-gray-800">
+        <Link to="/controls" className="rounded-xl bg-gray-900/80 border border-gray-800/80 p-2.5 hover:bg-gray-800/50 transition-colors">
           <ArrowLeft size={16} className="text-gray-400" />
         </Link>
-        <div>
+        <div className="flex-1">
           <div className="flex items-center gap-3">
-            <span className="rounded bg-gray-800 px-2 py-1 text-sm font-mono font-bold text-emerald-400">{control.code}</span>
+            <span className="rounded-lg bg-gray-800 px-2.5 py-1 text-sm font-mono font-bold text-emerald-400">{control.code}</span>
             <ComplianceBadge status={control.compliance_status || control.status} />
           </div>
           <h1 className="mt-1 text-xl font-bold text-white">{control.title}</h1>
         </div>
+        <button
+          onClick={handleAiSuggestions}
+          disabled={loadingAi}
+          className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 border border-emerald-500/30 px-3 py-2 text-xs font-medium text-emerald-400 hover:from-emerald-500/30 hover:to-cyan-500/30 transition-all disabled:opacity-50"
+        >
+          {loadingAi ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+          AI Suggestions
+        </button>
       </div>
 
+      {/* AI suggestions */}
+      {aiSuggestions && (
+        <GlassCard gradient className="gradient-accent-soft animate-scale-in">
+          <div className="flex items-center gap-2 mb-3">
+            <Sparkles size={14} className="text-emerald-400" />
+            <h3 className="text-sm font-semibold text-white">AI Implementation Suggestions</h3>
+            <AiBadge size="xs" />
+          </div>
+          <div className="space-y-2">
+            {(aiSuggestions.suggestions || [aiSuggestions.suggestion || aiSuggestions.message]).map((s, i) => (
+              <p key={i} className="text-xs text-gray-400 leading-relaxed">{typeof s === 'string' ? s : s?.description || s?.text}</p>
+            ))}
+          </div>
+        </GlassCard>
+      )}
+
       <div className="grid gap-6 lg:grid-cols-3">
-        {/* Main info */}
         <div className="space-y-6 lg:col-span-2">
           {control.description && (
-            <div className="rounded-xl bg-gray-900 border border-gray-800 p-6">
-              <h3 className="mb-2 text-sm font-medium text-gray-400 uppercase tracking-wide">Description</h3>
+            <GlassCard>
+              <h3 className="mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Description</h3>
               <p className="text-sm text-gray-300 leading-relaxed">{control.description}</p>
-            </div>
+            </GlassCard>
           )}
 
           {control.guidance && (
-            <div className="rounded-xl bg-gray-900 border border-gray-800 p-6">
-              <h3 className="mb-2 text-sm font-medium text-gray-400 uppercase tracking-wide">Implementation Guidance</h3>
+            <GlassCard>
+              <h3 className="mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Implementation Guidance</h3>
               <p className="text-sm text-gray-300 leading-relaxed whitespace-pre-line">{control.guidance}</p>
-            </div>
+            </GlassCard>
           )}
 
           {/* Evidence */}
-          <div className="rounded-xl bg-gray-900 border border-gray-800 p-6">
+          <GlassCard>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wide">Evidence ({evidences.length})</h3>
-              <Link to="/evidence" className="text-xs text-emerald-400 hover:underline">Manage evidence</Link>
+              <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Evidence ({evidences.length})</h3>
+              <Link to="/evidence" className="text-[10px] text-emerald-400 hover:underline">Manage evidence</Link>
             </div>
             {evidences.length > 0 ? (
               <div className="space-y-2">
                 {evidences.map((e) => (
-                  <div key={e.id} className="flex items-center justify-between rounded-lg bg-gray-800 p-3">
+                  <div key={e.id} className="flex items-center justify-between rounded-xl bg-gray-800/30 p-3">
                     <div className="flex items-center gap-3">
                       <FileSearch size={14} className="text-gray-500" />
                       <div>
                         <p className="text-sm text-gray-200">{e.title || e.name}</p>
-                        <p className="text-xs text-gray-600">{e.source} • {e.collected_at ? new Date(e.collected_at).toLocaleDateString() : 'N/A'}</p>
+                        <p className="text-[10px] text-gray-600">{e.source} &middot; {e.collected_at ? new Date(e.collected_at).toLocaleDateString() : 'N/A'}</p>
                       </div>
                     </div>
                     <StatusBadge status={e.status} />
@@ -98,18 +130,18 @@ export default function ControlDetail() {
             ) : (
               <p className="text-sm text-gray-600">No evidence linked to this control.</p>
             )}
-          </div>
+          </GlassCard>
 
           {/* Findings */}
-          <div className="rounded-xl bg-gray-900 border border-gray-800 p-6">
-            <h3 className="mb-4 text-sm font-medium text-gray-400 uppercase tracking-wide">Findings ({findings.length})</h3>
+          <GlassCard>
+            <h3 className="mb-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Findings ({findings.length})</h3>
             {findings.length > 0 ? (
               <div className="space-y-2">
                 {findings.map((f) => (
-                  <div key={f.id} className="flex items-center justify-between rounded-lg bg-gray-800 p-3">
+                  <div key={f.id} className="flex items-center justify-between rounded-xl bg-gray-800/30 p-3">
                     <div>
                       <p className="text-sm text-gray-200">{f.description || f.title}</p>
-                      <p className="text-xs text-gray-600">{f.finding_type}</p>
+                      <p className="text-[10px] text-gray-600">{f.finding_type}</p>
                     </div>
                     <StatusBadge status={f.status} />
                   </div>
@@ -118,14 +150,13 @@ export default function ControlDetail() {
             ) : (
               <p className="text-sm text-gray-600">No findings for this control.</p>
             )}
-          </div>
+          </GlassCard>
         </div>
 
-        {/* Sidebar */}
         <div className="space-y-6">
           {/* Applicability */}
-          <div className="rounded-xl bg-gray-900 border border-gray-800 p-6">
-            <h3 className="mb-3 text-sm font-medium text-gray-400 uppercase tracking-wide">Applicability</h3>
+          <GlassCard>
+            <h3 className="mb-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Applicability</h3>
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-500">Applicable</span>
@@ -135,16 +166,16 @@ export default function ControlDetail() {
               </div>
               {applicability.justification && (
                 <div>
-                  <span className="text-xs text-gray-600">Justification</span>
+                  <span className="text-[10px] text-gray-600">Justification</span>
                   <p className="text-sm text-gray-300 mt-1">{applicability.justification}</p>
                 </div>
               )}
             </div>
-          </div>
+          </GlassCard>
 
-          {/* Implementation Progress */}
-          <div className="rounded-xl bg-gray-900 border border-gray-800 p-6">
-            <h3 className="mb-3 text-sm font-medium text-gray-400 uppercase tracking-wide">Implementation</h3>
+          {/* Implementation */}
+          <GlassCard>
+            <h3 className="mb-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Implementation</h3>
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-500">Progress</span>
@@ -152,29 +183,27 @@ export default function ControlDetail() {
               </div>
               <div className="h-2 rounded-full bg-gray-800">
                 <div
-                  className="h-full rounded-full bg-emerald-500 transition-all"
+                  className="h-full rounded-full bg-emerald-500 animate-progress transition-all"
                   style={{ width: `${implementationPct}%` }}
                 />
               </div>
-              {control.implementation_status && (
-                <StatusBadge status={control.implementation_status} />
-              )}
+              {control.implementation_status && <StatusBadge status={control.implementation_status} />}
             </div>
-          </div>
+          </GlassCard>
 
           {/* Risk Treatments */}
           {riskTreatments.length > 0 && (
-            <div className="rounded-xl bg-gray-900 border border-gray-800 p-6">
-              <h3 className="mb-3 text-sm font-medium text-gray-400 uppercase tracking-wide">Risk Treatments</h3>
+            <GlassCard>
+              <h3 className="mb-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Risk Treatments</h3>
               <div className="space-y-2">
                 {riskTreatments.map((rt) => (
-                  <div key={rt.id} className="rounded-lg bg-gray-800 p-3">
+                  <div key={rt.id} className="rounded-xl bg-gray-800/30 p-3">
                     <p className="text-sm text-gray-200">{rt.description || rt.title}</p>
                     <StatusBadge status={rt.treatment_type || rt.status} className="mt-1" />
                   </div>
                 ))}
               </div>
-            </div>
+            </GlassCard>
           )}
         </div>
       </div>

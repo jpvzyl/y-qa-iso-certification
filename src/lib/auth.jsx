@@ -8,6 +8,7 @@ import {
   register as apiRegister,
   logout as apiLogout,
 } from './api'
+import { DEMO_USER, DEMO_PROJECTS } from './demo-data'
 
 const AuthContext = createContext(null)
 
@@ -100,6 +101,18 @@ export function AuthProvider({ children }) {
     setSelectedProject(null)
   }
 
+  const demoLogin = () => {
+    const jwt = 'demo-token-yqa-iso-27001'
+    setAuthToken(jwt)
+    setToken(jwt)
+    setUser(DEMO_USER)
+    setProjects(DEMO_PROJECTS)
+    setSelectedProject(DEMO_PROJECTS[0])
+    setApiProjectId(String(DEMO_PROJECTS[0].id))
+    localStorage.setItem('yqa_demo', '1')
+    return DEMO_USER
+  }
+
   const selectProject = (project) => {
     setSelectedProject(project)
     setApiProjectId(String(project.id))
@@ -107,7 +120,7 @@ export function AuthProvider({ children }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, token, projects, selectedProject, loading, login, register, logout, selectProject }}
+      value={{ user, token, projects, selectedProject, loading, login, register, logout, demoLogin, selectProject }}
     >
       {children}
     </AuthContext.Provider>

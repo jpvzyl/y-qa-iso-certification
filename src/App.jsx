@@ -18,6 +18,10 @@ import Policies from './pages/Policies'
 import PolicyDetail from './pages/PolicyDetail'
 import GapAnalysis from './pages/GapAnalysis'
 import Settings from './pages/Settings'
+import AiAssistant from './pages/AiAssistant'
+import CertificationRoadmap from './pages/CertificationRoadmap'
+import Training from './pages/Training'
+import Reports from './pages/Reports'
 
 export default function App() {
   return (
@@ -47,6 +51,10 @@ export default function App() {
             <Route path="policies/:id" element={<PolicyDetail />} />
             <Route path="gap-analysis" element={<GapAnalysis />} />
             <Route path="settings" element={<Settings />} />
+            <Route path="ai-assistant" element={<AiAssistant />} />
+            <Route path="roadmap" element={<CertificationRoadmap />} />
+            <Route path="training" element={<Training />} />
+            <Route path="reports" element={<Reports />} />
           </Route>
         </Routes>
     </AuthProvider>

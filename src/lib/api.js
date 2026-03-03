@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { installMockApi } from './mock-api'
 
 let authToken = localStorage.getItem('yqa_token')
 let projectId = localStorage.getItem('yqa_project_id')
@@ -7,6 +8,8 @@ const api = axios.create({
   baseURL: '/api/v1',
   headers: { 'Content-Type': 'application/json' },
 })
+
+installMockApi(api)
 
 api.interceptors.request.use((config) => {
   if (authToken) {
@@ -23,8 +26,9 @@ api.interceptors.response.use(
       projectId = null
       localStorage.removeItem('yqa_token')
       localStorage.removeItem('yqa_project_id')
-      if (!window.location.pathname.startsWith('/login')) {
-        window.location.href = '/login'
+      const base = import.meta.env.BASE_URL?.replace(/\/$/, '') || ''
+      if (!window.location.pathname.endsWith('/login')) {
+        window.location.href = `${base}/login`
       }
     }
     return Promise.reject(error)
@@ -118,6 +122,30 @@ export const getPolicy = (id) => api.get(p(`/policies/${id}`))
 export const createPolicy = (data) => api.post(p('/policies'), data)
 export const updatePolicy = (id, data) => api.patch(p(`/policies/${id}`), data)
 export const publishPolicy = (id) => api.patch(p(`/policies/${id}/publish`))
+
+// ─── AI / Intelligence ───────────────────────────────────────
+export const aiChat = (data) => api.post(p('/ai/chat'), data)
+export const aiAuditReadiness = () => api.get(p('/ai/audit_readiness'))
+export const aiControlSuggestions = (controlId) => api.get(p(`/ai/controls/${controlId}/suggestions`))
+export const aiGapRecommendations = () => api.get(p('/ai/gap_recommendations'))
+export const aiPolicyDraft = (data) => api.post(p('/ai/policy_draft'), data)
+export const aiRiskAssessment = (data) => api.post(p('/ai/risk_assessment'), data)
+
+// ─── Reports ─────────────────────────────────────────────────
+export const getReports = (params) => api.get(p('/reports'), { params })
+export const generateReport = (data) => api.post(p('/reports'), data)
+
+// ─── Certification Roadmap ───────────────────────────────────
+export const getCertificationRoadmap = () => api.get(p('/certification_roadmap'))
+
+// ─── Training ────────────────────────────────────────────────
+export const getTrainingCourses = (params) => api.get(p('/training/courses'), { params })
+export const getTrainingProgress = () => api.get(p('/training/progress'))
+
+// ─── Notifications ───────────────────────────────────────────
+export const getNotifications = (params) => api.get(p('/notifications'), { params })
+export const markNotificationRead = (id) => api.patch(p(`/notifications/${id}/read`))
+export const markAllNotificationsRead = () => api.patch(p('/notifications/read_all'))
 
 // ─── Connection Test ─────────────────────────────────────────
 export const testConnection = () => api.get('/iso_certification/frameworks')

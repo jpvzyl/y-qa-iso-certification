@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react'
-import { Settings as SettingsIcon, CheckCircle2, XCircle, Loader2, User, FolderOpen } from 'lucide-react'
+import { Settings as SettingsIcon, CheckCircle2, XCircle, Loader2, User, FolderOpen, Shield, Sparkles } from 'lucide-react'
 import { testConnection } from '../lib/api'
 import { useAuth } from '../lib/auth'
+import GlassCard from '../components/GlassCard'
+import PageHeader from '../components/PageHeader'
+import AiBadge from '../components/AiBadge'
 
 export default function Settings() {
   const { user, selectedProject } = useAuth()
@@ -39,22 +42,23 @@ export default function Settings() {
   }
 
   return (
-    <div className="space-y-6 max-w-2xl">
-      <div>
-        <h1 className="text-2xl font-bold text-white">Settings</h1>
-        <p className="text-sm text-gray-500">Account and connection details</p>
-      </div>
+    <div className="space-y-6 max-w-2xl animate-fade-in">
+      <PageHeader
+        title="Settings"
+        subtitle="Account, project, and connection configuration"
+      />
 
-      <div className="rounded-xl bg-gray-900 border border-gray-800 p-6 space-y-4">
-        <h3 className="text-sm font-medium text-gray-300">Account</h3>
+      {/* Account */}
+      <GlassCard>
+        <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Account</h3>
         {user && (
-          <div className="space-y-3">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500/10 border border-emerald-500/20">
-                <User size={18} className="text-emerald-400" />
+          <div className="space-y-4">
+            <div className="flex items-center gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+                <User size={20} className="text-emerald-400" />
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-200">
+                <p className="text-sm font-semibold text-gray-200">
                   {user.first_name} {user.last_name}
                 </p>
                 <p className="text-xs text-gray-500">{user.email}</p>
@@ -70,35 +74,37 @@ export default function Settings() {
             )}
           </div>
         )}
-      </div>
+      </GlassCard>
 
+      {/* Project */}
       {selectedProject && (
-        <div className="rounded-xl bg-gray-900 border border-gray-800 p-6 space-y-3">
-          <h3 className="text-sm font-medium text-gray-300">Current Project</h3>
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500/10 border border-emerald-500/20">
-              <FolderOpen size={18} className="text-emerald-400" />
+        <GlassCard>
+          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Current Project</h3>
+          <div className="flex items-center gap-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+              <FolderOpen size={20} className="text-emerald-400" />
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-200">{selectedProject.name}</p>
+              <p className="text-sm font-semibold text-gray-200">{selectedProject.name}</p>
               {selectedProject.description && (
                 <p className="text-xs text-gray-500">{selectedProject.description}</p>
               )}
             </div>
           </div>
-        </div>
+        </GlassCard>
       )}
 
-      <div className="rounded-xl bg-gray-900 border border-gray-800 p-6 space-y-5">
-        <h3 className="text-sm font-medium text-gray-300">Framework &amp; Connection</h3>
+      {/* Framework & Connection */}
+      <GlassCard>
+        <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Framework & Connection</h3>
 
         {frameworks.length > 0 && (
-          <div>
-            <label className="block text-xs text-gray-500 mb-1.5">Framework</label>
+          <div className="mb-5">
+            <label className="block text-xs text-gray-500 mb-2">Framework</label>
             <select
               value={framework}
               onChange={handleFrameworkChange}
-              className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm text-gray-200 focus:border-emerald-500 focus:outline-none"
+              className="w-full rounded-xl border border-gray-700 bg-gray-800/50 px-3 py-2.5 text-sm text-gray-200 focus:border-emerald-500 focus:outline-none transition-all"
             >
               <option value="">Select a framework...</option>
               {frameworks.map((f) => (
@@ -110,20 +116,18 @@ export default function Settings() {
           </div>
         )}
 
-        <div className="flex items-center gap-3">
-          <button
-            onClick={handleTest}
-            disabled={testing}
-            className="flex items-center gap-2 rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 text-sm font-medium text-gray-300 hover:bg-gray-700 disabled:opacity-50"
-          >
-            {testing ? <Loader2 size={14} className="animate-spin" /> : <SettingsIcon size={14} />}
-            Test Connection
-          </button>
-        </div>
+        <button
+          onClick={handleTest}
+          disabled={testing}
+          className="flex items-center gap-2 rounded-lg border border-gray-700 bg-gray-800/50 px-4 py-2.5 text-sm font-medium text-gray-300 hover:bg-gray-700/50 disabled:opacity-50 transition-colors"
+        >
+          {testing ? <Loader2 size={14} className="animate-spin" /> : <SettingsIcon size={14} />}
+          Test Connection
+        </button>
 
         {testResult && (
           <div
-            className={`flex items-center gap-3 rounded-lg p-4 ${
+            className={`mt-4 flex items-center gap-3 rounded-xl p-4 animate-scale-in ${
               testResult.success
                 ? 'bg-emerald-500/10 border border-emerald-500/20'
                 : 'bg-red-500/10 border border-red-500/20'
@@ -139,20 +143,47 @@ export default function Settings() {
             </p>
           </div>
         )}
-      </div>
+      </GlassCard>
 
-      <div className="rounded-xl bg-gray-900 border border-gray-800 p-6">
-        <h3 className="mb-3 text-sm font-medium text-gray-300">About</h3>
+      {/* AI Features */}
+      <GlassCard gradient className="gradient-accent-soft">
+        <div className="flex items-start gap-4">
+          <div className="rounded-xl gradient-accent p-3 glow-sm shrink-0">
+            <Sparkles size={18} className="text-white" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <h3 className="text-sm font-semibold text-white">AI Features</h3>
+              <AiBadge size="sm" label="Active" />
+            </div>
+            <p className="text-xs text-gray-400 leading-relaxed">
+              AI-powered features are enabled for this project. The AI assistant can help with policy drafting,
+              risk assessment, gap analysis recommendations, audit readiness scoring, and evidence review.
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {['Policy Drafting', 'Risk Assessment', 'Gap Analysis', 'Audit Readiness', 'Evidence Review'].map((f) => (
+                <span key={f} className="rounded-full bg-gray-800/50 border border-gray-700/50 px-2.5 py-1 text-[10px] text-gray-400">
+                  {f}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      </GlassCard>
+
+      {/* About */}
+      <GlassCard>
+        <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">About</h3>
         <div className="space-y-2 text-sm text-gray-500">
-          <p>Y-QA ISO Certification is a compliance management dashboard for ISO 27001:2022.</p>
-          <p>It connects to the Y-QA Rails API to manage controls, evidence, audits, risks, and policies.</p>
-          <div className="pt-3 border-t border-gray-800">
-            <p className="text-xs text-gray-600">
-              Powered by <span className="text-emerald-500 font-semibold">Y-QA</span> &middot; ISO 27001:2022
+          <p>Y-QA ISO Certification is an AI-powered compliance management platform for ISO 27001:2022.</p>
+          <p>It connects to the Y-QA API to manage controls, evidence, audits, risks, policies, and provide intelligent compliance guidance.</p>
+          <div className="pt-3 border-t border-gray-800/50">
+            <p className="text-[10px] text-gray-700 tracking-wide">
+              Powered by <span className="text-gradient font-bold">Y-QA</span> &middot; ISO 27001:2022 &middot; AI-Enhanced
             </p>
           </div>
         </div>
-      </div>
+      </GlassCard>
     </div>
   )
 }
